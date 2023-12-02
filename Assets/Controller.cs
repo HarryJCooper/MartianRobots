@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using System.Linq;
 
 public struct Point
 {
@@ -87,23 +88,44 @@ public class Controller : MonoBehaviour
         int y = int.Parse(coords[1].Value); 
 
         List<Point> grid = Grid(x, y);
-
-        input = input.Substring(input.IndexOf('\n')); // remove grid size from input by getting substring after first \n
-        string[] lines = input.Split('\n'); // split input into lines
+         // remove grid size from input by getting substring after first \n
+        
+        string[] lines = input.Substring(input.IndexOf('\n') + 1)
+                                .Split('\n') // split input into lines
+                                .Where(line => !string.IsNullOrWhiteSpace(line)) // remove empty lines
+                                .ToArray();
 
         if (lines.Length % 2 != 0){ // check if number of lines is valid
-            Debug.LogError("Invalid robot instructions");
+            Debug.LogError("Invalid robot instructions: " + lines.Length);
             return;
         }
 
         for (int i = 0; i < lines.Length; i += 2){
-            MatchCollection startCoords = Regex.Matches(lines[i], @"\d+");
-            if (startCoords.Count != 2){
-                Debug.LogError("Invalid robot start coordinates");
+            lines[i] = Regex.Replace(lines[i], @"\s+", "").ToUpper(); // convert to uppercase to allow for lower case input
+            
+            if (lines[i].Length != 3){ // check if robot start line is valid
+                Debug.LogError("Invalid number of characters in robot start line: " + lines[i]);
                 return;
             }
 
-            MatchCollection startDir = Regex.Matches(lines[i], @"[A-Z]");          
+            Match startCoords = Regex.Match(lines[i], @"\d+");
+            if (startCoords.Value.Length != 2){
+                Debug.LogError("Invalid robot start coordinates: " + lines[i]);
+                return;
+            }
+
+            int startX = int.Parse(startCoords.Value.Substring(0, 1));
+            int startY = int.Parse(startCoords.Value.Substring(1, 1));
+            if (startX > x || startY > y){
+                Debug.LogError("Robot start coordinates out of bounds: " + lines[i]);
+                continue; // used continue as you may want to skip invalid robots and continue with the rest
+            }
+
+            MatchCollection startDir = Regex.Matches(lines[i], @"[NSEW]");
+            if (startDir.Count != 1){
+                Debug.LogError("Invalid robot start direction: " + lines[i]);
+                return;
+            }      
         }
 
         Debug.Log("MADE IT HERE!");
