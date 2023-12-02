@@ -49,7 +49,7 @@ public class Controller : MonoBehaviour
         return grid;
     }
 
-    private string Output(int startX, int startY, int startDir, string instructions) // using int for direction as makes NE/SW/etc. easier to handle later
+    private string RobotOutput(int startX, int startY, int startDir, string instructions) // using int for direction as makes NE/SW/etc. easier to handle later
     {
         string output = "";
         Robot robot = new Robot(startX, startY, startDir);
@@ -91,14 +91,22 @@ public class Controller : MonoBehaviour
         input = input.Substring(input.IndexOf('\n')); // remove grid size from input by getting substring after first \n
         string[] lines = input.Split('\n'); // split input into lines
 
-        if (lines.Length % 2 != 0){ /* check if number of lines is valid */
+        if (lines.Length % 2 != 0){ // check if number of lines is valid
             Debug.LogError("Invalid robot instructions");
             return;
         }
 
-        
+        for (int i = 0; i < lines.Length; i += 2){
+            MatchCollection startCoords = Regex.Matches(lines[i], @"\d+");
+            if (startCoords.Count != 2){
+                Debug.LogError("Invalid robot start coordinates");
+                return;
+            }
 
-        Debug.Log("x: " + x + " y: " + y);
+            MatchCollection startDir = Regex.Matches(lines[i], @"[A-Z]");          
+        }
+
+        Debug.Log("MADE IT HERE!");
         string output = "";
 
         _outputText?.SetText(output);
