@@ -21,7 +21,7 @@ public struct Point
 
 public struct Robot
 {
-    public Robot(int x, int y, int direction)
+    public Robot(int x, int y, char direction)
     {
         this.x = x;
         this.y = y;
@@ -49,16 +49,6 @@ public class Controller : MonoBehaviour
         }
 
         return grid;
-    }
-
-    private string RobotOutput(int startX, int startY, int startDir, string instructions) // using int for direction as makes NE/SW/etc. easier to handle later
-    {
-        string output = "";
-        Robot robot = new Robot(startX, startY, startDir);
-        
-
-
-        return output;
     }
 
     private void Run()
@@ -131,23 +121,44 @@ public class Controller : MonoBehaviour
                 continue; // used continue as you may want to skip invalid robots and continue with the rest
             }
 
-            MatchCollection startDir = Regex.Matches(lines[i], @"[NSEW]");
-            if (startDir.Count != 1){
+            Match startDir = Regex.Match(lines[i], @"[NSEW]");
+            if (startDir.Value.Length != 1){
                 Debug.LogError("Invalid robot start direction: " + lines[i]);
                 return;
             }
 
-            if (lines[i + 1].Length >= _maxInstructionLength){ // check if robot instructions are valid
+            Robot robot = new Robot(robotStartX, robotStartY, startDir.Value[0]);
+
+            string instructions = lines[i + 1].ToUpper();
+
+            if (instructions.Length >= _maxInstructionLength){ // check if robot instructions are valid
                 Debug.LogError("robot instructions too long: " + lines[i + 1]);
                 return;
             }
 
-            if (!Regex.IsMatch(lines[i + 1], "^[FLRflr]+$")){ // check if robot instructions are valid
+            if (!Regex.IsMatch(instructions, "^[FLR]+$")){ // check if robot instructions are valid
                 Debug.LogError("robot instructions contain invalid characters: " + lines[i + 1]);
                 return;
             }
 
-            Debug.Log("Robot start: " + robotStartX + ", " + robotStartY + ", " + startDir[0].Value + ", " + lines[i + 1]);
+            foreach (char instruction in lines[i + 1]){ // check if robot instructions are valid
+                switch (instruction){
+                    case 'F':
+                        
+                        break;
+                    case 'L':
+
+                        break;
+                    case 'R':
+                        
+                        break;
+                    default:
+                        Debug.LogError("robot instructions contain invalid characters: " + lines[i + 1]);
+                        return;
+                }
+            }
+
+            Debug.Log("Robot start: " + robotStartX + ", " + robotStartY + ", " + startDir.Value + ", " + lines[i + 1]);
         }
 
         Debug.Log("MADE IT HERE!");
