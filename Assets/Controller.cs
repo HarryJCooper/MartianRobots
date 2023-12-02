@@ -114,9 +114,9 @@ public class Controller : MonoBehaviour
                 return;
             }
 
-            int startX = int.Parse(startCoords.Value.Substring(0, 1));
-            int startY = int.Parse(startCoords.Value.Substring(1, 1));
-            if (startX > x || startY > y){
+            int robotStartX = int.Parse(startCoords.Value.Substring(0, 1));
+            int robotStartY = int.Parse(startCoords.Value.Substring(1, 1));
+            if (robotStartX > x || robotStartY > y){
                 Debug.LogError("Robot start coordinates out of bounds: " + lines[i]);
                 continue; // used continue as you may want to skip invalid robots and continue with the rest
             }
@@ -125,7 +125,9 @@ public class Controller : MonoBehaviour
             if (startDir.Count != 1){
                 Debug.LogError("Invalid robot start direction: " + lines[i]);
                 return;
-            }      
+            }
+
+            Debug.Log("Robot start: " + robotStartX + ", " + robotStartY + ", " + startDir[0].Value + ", " + lines[i + 1]);
         }
 
         Debug.Log("MADE IT HERE!");
