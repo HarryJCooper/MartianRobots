@@ -34,8 +34,9 @@ public struct Robot
 
 public class Controller : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI _inputText, _outputText;
+    [SerializeField] private TextMeshProUGUI _inputText, _outputText, _maxGridSizeText, _maxInstructionLengthText;
     [SerializeField] private Button _runButton;
+    private int _maxGridSize = 50, _maxInstructionLength = 100;
     
     private List<Point> Grid(int x, int y)
     {
@@ -75,17 +76,26 @@ public class Controller : MonoBehaviour
         1 1 E
         3 3 N LOST
         2 3 S */
+        if (_maxGridSizeText != null && _maxGridSizeText.text != "") _maxGridSize = int.Parse(_maxGridSizeText.text);
+        if (_maxInstructionLengthText != null && _maxInstructionLengthText.text != "") _maxInstructionLength = int.Parse(_maxInstructionLengthText.text);
+
         string input = _inputText?.text;
         string firstLine = input.Substring(0, input.IndexOf('\n')); // get grid size from input by getting substring before first \n
-        MatchCollection coords = Regex.Matches(firstLine, @"\d+"); // get all numbers from first line, done this way to allow for spaces or no spaces in input
+        string firstLineNoSpaces = Regex.Replace(firstLine, @"\s+", "");
+        Match coords = Regex.Match(firstLineNoSpaces, @"\d+");
 
-        if (coords.Count != 2){ /* check if grid size is valid, can be altered for 3D grids etc */
+        if (coords.Length != 2){ /* check if grid size is valid, can be altered for 3D grids etc */
             Debug.LogError("Invalid grid size");
             return;
         }
 
-        int x = int.Parse(coords[0].Value); // convert string to int
-        int y = int.Parse(coords[1].Value); 
+        int x = int.Parse(coords.Value.Substring(0, 1)); // convert string to int
+        int y = int.Parse(coords.Value.Substring(1, 1));
+
+        if (x > _maxGridSize || y > _maxGridSize){ // check if grid size is valid
+            Debug.LogError("Grid size out of bounds");
+            return;
+        }
 
         List<Point> grid = Grid(x, y);
          // remove grid size from input by getting substring after first \n
@@ -124,6 +134,16 @@ public class Controller : MonoBehaviour
             MatchCollection startDir = Regex.Matches(lines[i], @"[NSEW]");
             if (startDir.Count != 1){
                 Debug.LogError("Invalid robot start direction: " + lines[i]);
+                return;
+            }
+
+            if (lines[i + 1].Length >= _maxInstructionLength){ // check if robot instructions are valid
+                Debug.LogError("robot instructions too long: " + lines[i + 1]);
+                return;
+            }
+
+            if (!Regex.IsMatch(lines[i + 1], "^[FLRflr]+$")){ // check if robot instructions are valid
+                Debug.LogError("robot instructions contain invalid characters: " + lines[i + 1]);
                 return;
             }
 
