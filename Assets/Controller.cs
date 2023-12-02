@@ -17,6 +17,7 @@ public class Point
     public int x;
     public int y;
     public bool scentLeft;
+    public GameObject pointObject;
 }
 
 public class Robot
@@ -26,10 +27,13 @@ public class Robot
         this.x = x;
         this.y = y;
         this.direction = direction;
+        this.robotObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        this.robotObject.RectTransform.position = new Vector3(x * 50, 10, y * 50);
     }
     public int x;
     public int y;
     public char direction;
+    public GameObject robotObject;
 }
 
 public class Controller : MonoBehaviour
@@ -45,6 +49,8 @@ public class Controller : MonoBehaviour
         for (int i = 0; i <= x; i++){
             for (int j = 0; j <= y; j++){
                 grid.Add(new Point(i, j, false));
+                GameObject pointObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                pointObject.transform.position = new Vector3(i * 50, 0, j * 50);
             }
         }
 
@@ -174,24 +180,26 @@ LLFFFLFLFL
                         break;
                 }
 
-                Debug.Log("ROBOT DIRECTION: " + robot.direction);
                 if (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y){
+                    Debug.Log("1 - ROBOT");
                     for (int k = 0; k < grid.Count; k++){
+                        if (grid[k].scentLeft){
+                            Debug.Log("SCENT LEFT: " + grid[k].x + ", " + grid[k].y);
+                            robot.x = previousX;
+                            robot.y = previousY;
+                            output += previousX + " " + previousY + " " + robot.direction;
+                            finishEarly = true;
+                            break;
+                        } 
+
                         if (grid[k].x == previousX && grid[k].y == previousY && !grid[k].scentLeft){
                             output += previousX + " " + previousY + " " + robot.direction + " LOST\n";
                             grid[k].scentLeft = true;
                             finishEarly = true;
                             break;
-                        } else if (grid[k].x == robot.x && grid[k].y == robot.y && grid[k].scentLeft){
-                            robot.x = previousX;
-                            robot.y = previousY;
-                            Debug.Log("Robot ENCOUNTERED SCENT: " + robot.x + ", " + robot.y + ", " + robot.direction + ", " + instructions);
-                            output += robot.x + " " + robot.y + " " + robot.direction + "\n";
-                            finishEarly = true;
-                            break;
                         }
                     }
-                    
+
                     break;
                 }
 
