@@ -6,7 +6,7 @@ using TMPro;
 using UnityEngine.UI;
 using System.Linq;
 
-public struct Point
+public class Point
 {
     public Point(int x, int y, bool scentLeft)
     {
@@ -19,7 +19,7 @@ public struct Point
     public bool scentLeft;
 }
 
-public struct Robot
+public class Robot
 {
     public Robot(int x, int y, char direction)
     {
@@ -29,7 +29,7 @@ public struct Robot
     }
     public int x;
     public int y;
-    public int direction;
+    public char direction;
 }
 
 public class Controller : MonoBehaviour
@@ -54,13 +54,13 @@ public class Controller : MonoBehaviour
     private void Run()
     {
         /* Sample Input
-        5 3
-        1 1 E
-        RFRFRFRF
-        3 2 N
-        FRRFLLFFRRFLL
-        0 3 W
-        LLFFFLFLFL
+5 3
+1 1 E
+RFRFRFRF
+3 2 N
+FRRFLLFFRRFLL
+0 3 W
+LLFFFLFLFL
 
         Sample Output
         1 1 E
@@ -69,6 +69,7 @@ public class Controller : MonoBehaviour
         if (_maxGridSizeText != null && _maxGridSizeText.text != "") _maxGridSize = int.Parse(_maxGridSizeText.text);
         if (_maxInstructionLengthText != null && _maxInstructionLengthText.text != "") _maxInstructionLength = int.Parse(_maxInstructionLengthText.text);
 
+        string output = "";
         string input = _inputText?.text;
         string firstLine = input.Substring(0, input.IndexOf('\n')); // get grid size from input by getting substring before first \n
         string firstLineNoSpaces = Regex.Replace(firstLine, @"\s+", "");
@@ -130,40 +131,81 @@ public class Controller : MonoBehaviour
             Robot robot = new Robot(robotStartX, robotStartY, startDir.Value[0]);
 
             string instructions = lines[i + 1].ToUpper();
+            instructions = new string(instructions.Where(c => c <= 127).ToArray()); // Remove non-ASCII characters
+            instructions = new string(instructions.Where(c => c >= ' ' && c <= '~').ToArray()); // Keep only printable ASCII characters
+            instructions = instructions.Replace(" ", ""); // remove whitespaces from the instructions string
 
             if (instructions.Length >= _maxInstructionLength){ // check if robot instructions are valid
-                Debug.LogError("robot instructions too long: " + lines[i + 1]);
+                Debug.LogError("robot instructions too long: " + instructions);
                 return;
             }
-
-            if (!Regex.IsMatch(instructions, "^[FLR]+$")){ // check if robot instructions are valid
-                Debug.LogError("robot instructions contain invalid characters: " + lines[i + 1]);
-                return;
-            }
-
-            foreach (char instruction in lines[i + 1]){ // check if robot instructions are valid
-                switch (instruction){
-                    case 'F':
-                        
-                        break;
-                    case 'L':
-
-                        break;
-                    case 'R':
-                        
-                        break;
-                    default:
-                        Debug.LogError("robot instructions contain invalid characters: " + lines[i + 1]);
-                        return;
+            
+            foreach (char instruction in instructions){ // check if robot instructions are valid, couldn't find a way to do this with regex
+                if (instruction != 'F' && instruction !='L' && instruction != 'R'){
+                    Debug.LogError("robot instructions contain invalid characters: " + instruction + " in " + instructions);
+                    return;
                 }
             }
+            
+            bool finishEarly = false;
+            foreach (char instruction in instructions){ // check if robot instructions are valid
+                int previousX = robot.x;
+                int previousY = robot.y;
+                switch (instruction){
+                    case 'F':
+                        if (robot.direction == 'N') robot.y++;
+                        else if (robot.direction == 'E') robot.x++;
+                        else if (robot.direction == 'S') robot.y--;
+                        else if (robot.direction == 'W') robot.x--;
+                        break;
+                    case 'L':
+                        if (robot.direction == 'N') robot.direction = 'W';
+                        else if (robot.direction == 'E') robot.direction = 'N';
+                        else if (robot.direction == 'S') robot.direction = 'E';
+                        else if (robot.direction == 'W') robot.direction = 'S';
+                        break;
+                    case 'R':
+                        if (robot.direction == 'N') robot.direction = 'E';
+                        else if (robot.direction == 'E') robot.direction = 'S';
+                        else if (robot.direction == 'S') robot.direction = 'W';
+                        else if (robot.direction == 'W') robot.direction = 'N';
+                        break;
+                    default:
+                        break;
+                }
 
-            Debug.Log("Robot start: " + robotStartX + ", " + robotStartY + ", " + startDir.Value + ", " + lines[i + 1]);
+                Debug.Log("ROBOT DIRECTION: " + robot.direction);
+                if (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y){
+                    for (int k = 0; k < grid.Count; k++){
+                        if (grid[k].x == previousX && grid[k].y == previousY && !grid[k].scentLeft){
+                            output += previousX + " " + previousY + " " + robot.direction + " LOST\n";
+                            grid[k].scentLeft = true;
+                            finishEarly = true;
+                            break;
+                        } else if (grid[k].x == robot.x && grid[k].y == robot.y && grid[k].scentLeft){
+                            robot.x = previousX;
+                            robot.y = previousY;
+                            Debug.Log("Robot ENCOUNTERED SCENT: " + robot.x + ", " + robot.y + ", " + robot.direction + ", " + instructions);
+                            output += robot.x + " " + robot.y + " " + robot.direction + "\n";
+                            finishEarly = true;
+                            break;
+                        }
+                    }
+                    
+                    break;
+                }
+
+                if (finishEarly) break;
+            }
+
+            if (!finishEarly){
+                Debug.Log("Robot FINISHED: " + robot.x + ", " + robot.y + ", " + robot.direction);
+                output += robot.x + " " + robot.y + " " + robot.direction + "\n";
+            } 
         }
 
         Debug.Log("MADE IT HERE!");
-        string output = "";
-
+        Debug.Log("output: " + output);
         _outputText?.SetText(output);
     }
 
