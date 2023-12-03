@@ -96,13 +96,16 @@ public class Robot
 
 public class Controller : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI _inputText, _outputText, _maxGridSizeText, _maxInstructionLengthText, _waitTimeText;
+    [SerializeField] private TextMeshProUGUI _inputText, _outputText;
+    [SerializeField] private TMP_InputField _waitTimeInputField;
     [SerializeField] private Button _runButton;
     [SerializeField] private GameObject _pointPrefab, _robotPrefab;
     [SerializeField] private float _waitTime = 2f;
     [SerializeField] private Transform _testAreaTransform;
     [SerializeField] private RectTransform _testAreaRectTransform;
     private int _maxGridSize = 50, _maxInstructionLength = 100, _mapScaleX = 100, _mapScaleY = 100;
+
+    // future work - [SerializeField] private TextMeshProUGUI _maxGridSizeText, _maxInstructionLengthText;
 
     private List<Point> Grid(int x, int y)
     {
@@ -123,9 +126,17 @@ public class Controller : MonoBehaviour
 
     private IEnumerator Run()
     {
+        /* future work, add variable max grid size and instruction length
         if (_maxGridSizeText != null && _maxGridSizeText.text != "") _maxGridSize = int.Parse(_maxGridSizeText.text);
         if (_maxInstructionLengthText != null && _maxInstructionLengthText.text != "") _maxInstructionLength = int.Parse(_maxInstructionLengthText.text);
-        
+        */
+
+        if (float.TryParse(_waitTimeInputField?.text, out _waitTime)) Debug.Log("Wait time: " + _waitTime);
+        else {
+            _waitTime = 2f;
+            Debug.LogError("Invalid wait time");
+        }
+
         string output = "";
         string input = _inputText?.text;
         string firstLine = input.Substring(0, input.IndexOf('\n')); // get grid size from input by getting substring before first \n
