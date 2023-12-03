@@ -21,79 +21,6 @@ public class Point
     public GameObject pointObject;
 }
 
-public class Robot
-{
-    public int x;
-    public int y;
-    public char direction;
-    private GameObject _robotObject;
-    private RectTransform _rectTransform;
-    private int _mapScaleX = 100, _mapScaleY = 100;
-    
-    public Robot(int x, int y, char direction, GameObject robotObject, int mapScaleX = 100, int mapScaleY = 100)
-    {
-        this.x = x;
-        this.y = y;
-        this.direction = direction;
-        this._robotObject = robotObject;
-        this._rectTransform = robotObject.GetComponent<RectTransform>();
-        this._mapScaleX = mapScaleX;
-        this._mapScaleY = mapScaleY;
-        UpdateRotation();
-        _robotObject.GetComponent<Image>().color = new Color(Random.Range(0, 1f),Random.Range(0f, 1f),Random.Range(0f, 1f), 1f);
-    }
-
-    private void UpdateRotation()
-    {
-        float zRotation = 0;
-        switch (direction){
-            case 'N': zRotation = 0; break;
-            case 'E': zRotation = -90; break;
-            case 'S': zRotation = 180; break;
-            case 'W': zRotation = 90; break;
-        }
-        _rectTransform.localEulerAngles = new Vector3(0, 0, zRotation);
-    }
-
-    public void MoveForward()
-    {
-        if (direction == 'N') y++;
-        else if (direction == 'E') x++;
-        else if (direction == 'S') y--;
-        else if (direction == 'W') x--;
-        _rectTransform.anchoredPosition = new Vector2(x * _mapScaleX, y * _mapScaleY);
-    }
-
-    public void MoveBackward()
-    {
-        if (direction == 'N') y--;
-        else if (direction == 'E') x--;
-        else if (direction == 'S') y++;
-        else if (direction == 'W') x++;
-        _rectTransform.anchoredPosition = new Vector2(x * _mapScaleX, y * _mapScaleY);
-    }
-
-    public void TurnLeft()
-    {
-        if (direction == 'N') direction = 'W';
-        else if (direction == 'E') direction = 'N';
-        else if (direction == 'S') direction = 'E';
-        else if (direction == 'W') direction = 'S';
-        UpdateRotation();
-    }
-
-    public void TurnRight()
-    {
-        if (direction == 'N') direction = 'E';
-        else if (direction == 'E') direction = 'S';
-        else if (direction == 'S') direction = 'W';
-        else if (direction == 'W') direction = 'N';
-        UpdateRotation();
-    }
-
-    public void ExplodeRobot() => _robotObject.GetComponent<ExplodedImage>().ReplaceImage();
-}
-
 public class Controller : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI _inputText, _outputText;
@@ -111,6 +38,10 @@ public class Controller : MonoBehaviour
     {
         List<Point> grid = new List<Point>();
 
+        /* ________CREATE GRID POINTS FOR UI________  
+        if there was no grid UI, this wouldn't be required as could just save positions with scent, 
+        rather than creating the list upfront
+        */
         for (int i = 0; i <= x; i++){
             for (int j = 0; j <= y; j++){
                 GameObject pointObject = GameObject.Instantiate(_pointPrefab);
@@ -120,6 +51,7 @@ public class Controller : MonoBehaviour
                 grid.Add(new Point(i, j, false));
             }
         }
+        /* ________END CREATE GRID POINTS________ */
 
         return grid;
     }
@@ -133,17 +65,18 @@ public class Controller : MonoBehaviour
 
         if (float.TryParse(_waitTimeInputField?.text, out _waitTime)) Debug.Log("Wait time: " + _waitTime);
         else {
-            _waitTime = 2f;
-            Debug.LogError("Invalid wait time");
+            _waitTime = 1f;
+            Debug.LogError("Invalid wait time given, waitTime set to 1");
         }
 
         string output = "";
         string input = _inputText?.text;
+
+        /* ________GET GRID COORDINATES________ */
         string firstLine = input.Substring(0, input.IndexOf('\n')); // get grid size from input by getting substring before first \n
         MatchCollection coords = Regex.Matches(firstLine, @"\d+");
         
-
-        if (coords.Count != 2){ /* check if grid size is valid, can be altered for 3D grids etc */
+        if (coords.Count != 2){ // check if grid size is valid, can be altered for 3D grids etc
             Debug.LogError("Invalid grid size");
             yield break;
         }
@@ -160,9 +93,11 @@ public class Controller : MonoBehaviour
         _mapScaleY = (int) _testAreaRectTransform.rect.height / y;
 
         List<Point> grid = Grid(x, y);
-         // remove grid size from input by getting substring after first \n
-        
-        string[] lines = input.Substring(input.IndexOf('\n') + 1)
+        /*________END GET GRID COORDINATES________*/
+
+
+        /* ________SPLIT ROBOT AND ROBOT DIRECTIOS INTO LINES________ */
+        string[] lines = input.Substring(input.IndexOf('\n') + 1) // remove grid size from input by getting substring after first new line
                                 .Split('\n') // split input into lines
                                 .Where(line => !string.IsNullOrWhiteSpace(line)) // remove empty lines
                                 .ToArray();
@@ -171,23 +106,26 @@ public class Controller : MonoBehaviour
             Debug.LogError("Invalid robot instructions: " + lines.Length);
             yield break;
         }
+        /* ________END SPLIT ROBOT AND ROBOT DIRECTIOS INTO LINES________ */
 
-        for (int i = 0; i < lines.Length; i += 2){
-            string startPosition = Regex.Replace(lines[i], @"\s+", "").ToUpper(); // convert to uppercase to allow for lower case input
+
+        for (int i = 0; i < lines.Length; i += 2){ // i is the robot start position, i + 1 is the robot instructions
+            /* ________GET ROBOT START POSITION________ */
+            string startPosition = lines[i].ToUpper(); // convert to uppercase to allow for lower case input
             
-            if (startPosition.Length != 3){ // check if robot start line is valid
-                Debug.LogError("Invalid number of characters in robot start line: " + lines[i]);
-                yield break;
-            }
+            // if (startPosition.Length != 3){ // check if robot start line is valid
+            //     Debug.LogError("Invalid number of characters in robot start line: " + lines[i]);
+            //     yield break;
+            // }
 
-            Match startCoords = Regex.Match(startPosition, @"\d+");
-            if (startCoords.Value.Length != 2){
+            MatchCollection startCoords = Regex.Matches(startPosition, @"\d+");
+            if (startCoords.Count != 2){
                 Debug.LogError("Invalid robot start coordinates: " + startPosition);
                 yield break;
             }
 
-            int robotStartX = int.Parse(startCoords.Value.Substring(0, 1));
-            int robotStartY = int.Parse(startCoords.Value.Substring(1, 1));
+            int robotStartX = int.Parse(startCoords[0].Value);
+            int robotStartY = int.Parse(startCoords[1].Value);
             if (robotStartX > x || robotStartY > y){
                 Debug.LogError("Robot start coordinates out of bounds: " + startPosition);
                 continue; // used continue as you may want to skip invalid robots and continue with the rest
@@ -198,13 +136,17 @@ public class Controller : MonoBehaviour
                 Debug.LogError("Invalid robot start direction: " + startPosition);
                 yield break;
             }
+            /*________END GET ROBOT START POSITION________*/
 
+            /*________CREATE ROBOT OBJECT ________*/
             GameObject robotObject = GameObject.Instantiate(_robotPrefab);
             robotObject.transform.SetParent(_testAreaTransform);
             RectTransform rectTransform = robotObject.GetComponent<RectTransform>();
             rectTransform.anchoredPosition = new Vector2(robotStartX * _mapScaleX, robotStartY * _mapScaleY);
             Robot robot = new Robot(robotStartX, robotStartY, startDir.Value[0], robotObject, _mapScaleX, _mapScaleY);
-
+            /*________END CREATE ROBOT OBJECT________ */
+            
+            /*________GET ROBOT INSTRUCTIONS________ */
             string instructions = lines[i + 1].ToUpper();
             instructions = new string(instructions.Where(c => c <= 127).ToArray()); // Remove non-ASCII characters
             instructions = new string(instructions.Where(c => c >= ' ' && c <= '~').ToArray()); // Keep only printable ASCII characters
@@ -221,61 +163,52 @@ public class Controller : MonoBehaviour
                     yield break;
                 }
             }
+            /*________END GET ROBOT INSTRUCTIONS________*/
             
+            /*________RUN ROBOT INSTRUCTIONS________*/
             bool finishEarly = false;
             bool skipInstruction = false;
             foreach (char instruction in instructions){ // check if robot instructions are valid
-                yield return new WaitForSeconds(_waitTime); // wait for _waitTime seconds before executing next instruction
+                yield return new WaitForSeconds(_waitTime); // wait for _waitTime seconds before executing next instruction (for UI purposes)
                 int previousX = robot.x;
                 int previousY = robot.y;
-                switch (instruction){
-                    case 'F':
-                        robot.MoveForward();
-                        break;
-                    case 'L':
-                        robot.TurnLeft();
-                        break;
-                    case 'R':
-                        robot.TurnRight();
-                        break;
-                    default:
-                        break;
+                switch (instruction){ // can add more instructions for future work
+                    case 'F': robot.MoveForward(); break;
+                    case 'L': robot.TurnLeft(); break;
+                    case 'R': robot.TurnRight(); break;
+                    default: break;
                 }
 
                 if (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y){
                     for (int k = 0; k < grid.Count; k++){
-                        if (grid[k].scentLeft){
+                        if (grid[k].scentLeft){ // if scent has been left, skip instruction
                             robot.MoveBackward();
                             skipInstruction = true;
                             break;
                         }
 
-                        if (grid[k].x == previousX && grid[k].y == previousY && !grid[k].scentLeft){
-                            output += previousX + " " + previousY + " " + robot.direction + " LOST\n";
+                        if (grid[k].x == previousX && grid[k].y == previousY && !grid[k].scentLeft){ // farewell sweet prince!
+                            output += previousX + " " + previousY + " " + robot.direction + " LOST\n"; // add lost robot to output
                             grid[k].scentLeft = true;
-                            finishEarly = true;
-                            robot.ExplodeRobot();
+                            finishEarly = true; // stop running instructions early as robot is lost
+                            robot.ExplodeRobot(); // change robot sprite to exploded image
                             break;
                         }
                     }
                 }
 
-                if (skipInstruction){
+                if (skipInstruction){ // robot has encountered scent, skip instruction
                     skipInstruction = false;
                     continue;
                 }
 
-                if (finishEarly) break;
+                if (finishEarly) break; // if robot has exploded, stop running instructions early
             }
+            /*________END RUN ROBOT INSTRUCTIONS________*/
 
-            if (!finishEarly){
-                Debug.Log("Robot FINISHED: " + robot.x + ", " + robot.y + ", " + robot.direction);
-                
-                output += robot.x + " " + robot.y + " " + robot.direction + "\n";
-            } 
+            if (!finishEarly) output += robot.x + " " + robot.y + " " + robot.direction + "\n";
         }
 
-        Debug.Log("MADE IT HERE!");
         Debug.Log("output: " + output);
         _outputText?.SetText(output);
     }
