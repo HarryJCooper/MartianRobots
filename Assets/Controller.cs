@@ -140,16 +140,16 @@ public class Controller : MonoBehaviour
         string output = "";
         string input = _inputText?.text;
         string firstLine = input.Substring(0, input.IndexOf('\n')); // get grid size from input by getting substring before first \n
-        string firstLineNoSpaces = Regex.Replace(firstLine, @"\s+", "");
-        Match coords = Regex.Match(firstLineNoSpaces, @"\d+");
+        MatchCollection coords = Regex.Matches(firstLine, @"\d+");
+        
 
-        if (coords.Length != 2){ /* check if grid size is valid, can be altered for 3D grids etc */
+        if (coords.Count != 2){ /* check if grid size is valid, can be altered for 3D grids etc */
             Debug.LogError("Invalid grid size");
             yield break;
         }
 
-        int x = int.Parse(coords.Value.Substring(0, 1)); // convert string to int
-        int y = int.Parse(coords.Value.Substring(1, 1));
+        int x = int.Parse(coords[0].Value); // convert string to int
+        int y = int.Parse(coords[1].Value);
 
         if (x > _maxGridSize || y > _maxGridSize){ // check if grid size is valid
             Debug.LogError("Grid size out of bounds");
