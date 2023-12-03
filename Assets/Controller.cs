@@ -28,16 +28,17 @@ public class Robot
     public char direction;
     private GameObject _robotObject;
     private RectTransform _rectTransform;
-    private int _mapScale = 100;
+    private int _mapScaleX = 100, _mapScaleY = 100;
     
-    public Robot(int x, int y, char direction, GameObject robotObject, int mapScale = 100)
+    public Robot(int x, int y, char direction, GameObject robotObject, int mapScaleX = 100, int mapScaleY = 100)
     {
         this.x = x;
         this.y = y;
         this.direction = direction;
         this._robotObject = robotObject;
         this._rectTransform = robotObject.GetComponent<RectTransform>();
-        this._mapScale = mapScale;
+        this._mapScaleX = mapScaleX;
+        this._mapScaleY = mapScaleY;
         UpdateRotation();
         _robotObject.GetComponent<Image>().color = new Color(Random.Range(0, 1f),Random.Range(0f, 1f),Random.Range(0f, 1f), 1f);
     }
@@ -60,7 +61,16 @@ public class Robot
         else if (direction == 'E') x++;
         else if (direction == 'S') y--;
         else if (direction == 'W') x--;
-        _rectTransform.anchoredPosition = new Vector2(x * _mapScale, y * _mapScale);
+        _rectTransform.anchoredPosition = new Vector2(x * _mapScaleX, y * _mapScaleY);
+    }
+
+    public void MoveBackward()
+    {
+        if (direction == 'N') y--;
+        else if (direction == 'E') x--;
+        else if (direction == 'S') y++;
+        else if (direction == 'W') x++;
+        _rectTransform.anchoredPosition = new Vector2(x * _mapScaleX, y * _mapScaleY);
     }
 
     public void TurnLeft()
@@ -81,10 +91,7 @@ public class Robot
         UpdateRotation();
     }
 
-    public void ExplodeRobot()
-    {
-        _robotObject.GetComponent<ExplodedImage>().ReplaceImage();
-    }
+    public void ExplodeRobot() => _robotObject.GetComponent<ExplodedImage>().ReplaceImage();
 }
 
 public class Controller : MonoBehaviour
@@ -93,7 +100,9 @@ public class Controller : MonoBehaviour
     [SerializeField] private Button _runButton;
     [SerializeField] private GameObject _pointPrefab, _robotPrefab;
     [SerializeField] private float _waitTime = 2f;
-    private int _maxGridSize = 50, _maxInstructionLength = 100, _mapScale = 100;
+    [SerializeField] private Transform _testAreaTransform;
+    [SerializeField] private RectTransform _testAreaRectTransform;
+    private int _maxGridSize = 50, _maxInstructionLength = 100, _mapScaleX = 100, _mapScaleY = 100;
 
     private List<Point> Grid(int x, int y)
     {
@@ -102,9 +111,9 @@ public class Controller : MonoBehaviour
         for (int i = 0; i <= x; i++){
             for (int j = 0; j <= y; j++){
                 GameObject pointObject = GameObject.Instantiate(_pointPrefab);
-                pointObject.transform.SetParent(GameObject.Find("Map").transform);
+                pointObject.transform.SetParent(_testAreaTransform);
                 RectTransform rectTransform = pointObject.GetComponent<RectTransform>();
-                rectTransform.anchoredPosition = new Vector2(i * _mapScale, j * _mapScale);
+                rectTransform.anchoredPosition = new Vector2(i * _mapScaleX, j * _mapScaleY);
                 grid.Add(new Point(i, j, false));
             }
         }
@@ -114,22 +123,9 @@ public class Controller : MonoBehaviour
 
     private IEnumerator Run()
     {
-        /* Sample Input
-5 3
-1 1 E
-RFRFRFRF
-3 2 N
-FRRFLLFFRRFLL
-0 3 W
-LLFFFLFLFL
-
-        Sample Output
-        1 1 E
-        3 3 N LOST
-        2 3 S */
         if (_maxGridSizeText != null && _maxGridSizeText.text != "") _maxGridSize = int.Parse(_maxGridSizeText.text);
         if (_maxInstructionLengthText != null && _maxInstructionLengthText.text != "") _maxInstructionLength = int.Parse(_maxInstructionLengthText.text);
-
+        
         string output = "";
         string input = _inputText?.text;
         string firstLine = input.Substring(0, input.IndexOf('\n')); // get grid size from input by getting substring before first \n
@@ -148,6 +144,9 @@ LLFFFLFLFL
             Debug.LogError("Grid size out of bounds");
             yield break;
         }
+
+        _mapScaleX = (int) _testAreaRectTransform.rect.width / x;
+        _mapScaleY = (int) _testAreaRectTransform.rect.height / y;
 
         List<Point> grid = Grid(x, y);
          // remove grid size from input by getting substring after first \n
@@ -190,10 +189,10 @@ LLFFFLFLFL
             }
 
             GameObject robotObject = GameObject.Instantiate(_robotPrefab);
-            robotObject.transform.SetParent(GameObject.Find("Map").transform);
+            robotObject.transform.SetParent(_testAreaTransform);
             RectTransform rectTransform = robotObject.GetComponent<RectTransform>();
-            rectTransform.anchoredPosition = new Vector2(robotStartX * _mapScale, robotStartY * _mapScale);
-            Robot robot = new Robot(robotStartX, robotStartY, startDir.Value[0], robotObject);
+            rectTransform.anchoredPosition = new Vector2(robotStartX * _mapScaleX, robotStartY * _mapScaleY);
+            Robot robot = new Robot(robotStartX, robotStartY, startDir.Value[0], robotObject, _mapScaleX, _mapScaleY);
 
             string instructions = lines[i + 1].ToUpper();
             instructions = new string(instructions.Where(c => c <= 127).ToArray()); // Remove non-ASCII characters
@@ -213,6 +212,7 @@ LLFFFLFLFL
             }
             
             bool finishEarly = false;
+            bool skipInstruction = false;
             foreach (char instruction in instructions){ // check if robot instructions are valid
                 yield return new WaitForSeconds(_waitTime); // wait for _waitTime seconds before executing next instruction
                 int previousX = robot.x;
@@ -232,16 +232,12 @@ LLFFFLFLFL
                 }
 
                 if (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y){
-                    Debug.Log("1 - ROBOT");
                     for (int k = 0; k < grid.Count; k++){
                         if (grid[k].scentLeft){
-                            Debug.Log("SCENT LEFT: " + grid[k].x + ", " + grid[k].y);
-                            robot.x = previousX;
-                            robot.y = previousY;
-                            output += previousX + " " + previousY + " " + robot.direction;
-                            finishEarly = true;
+                            robot.MoveBackward();
+                            skipInstruction = true;
                             break;
-                        } 
+                        }
 
                         if (grid[k].x == previousX && grid[k].y == previousY && !grid[k].scentLeft){
                             output += previousX + " " + previousY + " " + robot.direction + " LOST\n";
@@ -251,8 +247,11 @@ LLFFFLFLFL
                             break;
                         }
                     }
+                }
 
-                    break;
+                if (skipInstruction){
+                    skipInstruction = false;
+                    continue;
                 }
 
                 if (finishEarly) break;

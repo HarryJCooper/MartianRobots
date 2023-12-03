@@ -88,3 +88,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75d5421d5142bf24d97bca8fd4e39939, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  explodedImage: {fileID: 21300000, guid: 04c4a6850652fb34ea0d01581a3ad9c1, type: 3}
