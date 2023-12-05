@@ -34,7 +34,7 @@ public class Controller : MonoBehaviour
 
     /* future work 
     - [SerializeField] private TextMeshProUGUI _maxGridSizeText, _maxInstructionLengthText;
-    - create sanatize input function to remove non-ASCII characters etc, 
+    - create sanatize input function to remove non-ASCII characters, make uppercase etc, 
     */
     private List<Point> Grid(int x, int y)
     {
