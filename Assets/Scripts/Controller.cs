@@ -40,8 +40,7 @@ public class Controller : MonoBehaviour
 
         /* ________CREATE GRID POINTS FOR UI________  
         if there was no grid UI, this wouldn't be required as could just save positions with scent, 
-        rather than creating the list upfront
-        */
+        rather than creating the list upfront */
         for (int i = 0; i <= x; i++){
             for (int j = 0; j <= y; j++){
                 GameObject pointObject = GameObject.Instantiate(_pointPrefab);
@@ -113,11 +112,6 @@ public class Controller : MonoBehaviour
             /* ________GET ROBOT START POSITION________ */
             string startPosition = lines[i].ToUpper(); // convert to uppercase to allow for lower case input
             
-            // if (startPosition.Length != 3){ // check if robot start line is valid
-            //     Debug.LogError("Invalid number of characters in robot start line: " + lines[i]);
-            //     yield break;
-            // }
-
             MatchCollection startCoords = Regex.Matches(startPosition, @"\d+");
             if (startCoords.Count != 2){
                 Debug.LogError("Invalid robot start coordinates: " + startPosition);
