@@ -181,9 +181,10 @@ public class Controller : MonoBehaviour
 
                 if (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y){
                     for (int k = 0; k < grid.Count; k++){
-                        if (grid[k].scentLeft){ // if scent has been left, skip instruction
+                        if (grid[k].scentLeft && robot.x == grid[k].x && robot.x == grid[k].y){ // if scent has been left, skip instruction
                             robot.MoveBackward();
                             skipInstruction = true;
+                            Debug.Log("scent left, skipping instruction: " + instruction);
                             break;
                         }
 
