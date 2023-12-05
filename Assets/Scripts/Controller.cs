@@ -151,7 +151,7 @@ public class Controller : MonoBehaviour
                 yield break;
             }
             
-            foreach (char instruction in instructions){ // check if robot instructions are valid, couldn't find a way to do this with regex
+            foreach (char instruction in instructions){ // check if robot instructions are valid
                 if (instruction != 'F' && instruction !='L' && instruction != 'R'){
                     Debug.LogError("robot instructions contain invalid characters: " + instruction + " in " + instructions);
                     yield break;
@@ -160,39 +160,39 @@ public class Controller : MonoBehaviour
             /*________END GET ROBOT INSTRUCTIONS________*/
             
             /*________RUN ROBOT INSTRUCTIONS________*/
-            bool finishEarly = false;
-            bool skipInstruction = false;
+            // *NEW NOTE* - we check if the robot has gone out of bounds, before we check for scent, hence 'previousX' and 'previousY'
+            bool finishEarly = false, skipInstruction = false;
             foreach (char instruction in instructions){
                 yield return new WaitForSeconds(_waitTime); // wait for _waitTime seconds before executing next instruction (for UI purposes)
-                int previousX = robot.x;
-                int previousY = robot.y;
-                switch (instruction){ // can add more instructions for future work
+                
+                int previousX = robot.x, previousY = robot.y; // save previous position for checking if robot has left scent
+                
+                switch (instruction){ // here can add more instructions for future work
                     case 'F': robot.MoveForward(); break;
                     case 'L': robot.TurnLeft(); break;
                     case 'R': robot.TurnRight(); break;
                     default: break;
                 }
 
-                if (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y){
+                bool robotOffGrid = (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y); 
+                if (robotOffGrid){
                     for (int k = 0; k < grid.Count; k++){
-                        Debug.Log("grid: " + grid[k].x + " " + grid[k].y + " " + grid[k].scentLeft);
-                        Debug.Log("robot: " + previousX + " " + previousY);
-
-                        if (grid[k].scentLeft && previousX == grid[k].x && previousY == grid[k].y){ 
+                        bool robotAtGridPoint = (grid[k].x == previousX && grid[k].y == previousY);
+                        if (!robotAtGridPoint) continue; // if robot is not at grid[k], continue
+                        if (grid[k].scentLeft){ 
                             // if scent has been left and the robot is in the same position as that scent, take back the instruction
                             robot.MoveBackward();
                             skipInstruction = true;
                             Debug.Log("scent left, skipping instruction: " + instruction);
                             break;
                         }
-
-                        if (grid[k].x == previousX && grid[k].y == previousY && !grid[k].scentLeft){ // farewell sweet prince!
-                            output += previousX + " " + previousY + " " + robot.direction + " LOST\n"; // add lost robot to output
-                            grid[k].scentLeft = true;
-                            finishEarly = true; // stop running instructions early as robot is lost
-                            robot.ExplodeRobot(); // change robot sprite to exploded image
-                            break;
-                        }
+                        
+                        // else, farewell sweet prince!
+                        output += previousX + " " + previousY + " " + robot.direction + " LOST\n"; // add lost robot to output
+                        grid[k].scentLeft = true;
+                        finishEarly = true; // stop running instructions early as robot is lost
+                        robot.ExplodeRobot(); // change robot sprite to exploded image
+                        break;
                     }
                 }
 
