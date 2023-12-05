@@ -39,7 +39,7 @@ public class Controller : MonoBehaviour
         List<Point> grid = new List<Point>();
 
         /* ________CREATE GRID POINTS FOR UI________  
-        if there was no grid UI, this wouldn't be required as could just save positions with scent, 
+        if there was no grid UI, this wouldn't be required as could just save positions with scent, then check if robot has moved into that position, 
         rather than creating the list upfront */
         for (int i = 0; i <= x; i++){
             for (int j = 0; j <= y; j++){
@@ -69,7 +69,7 @@ public class Controller : MonoBehaviour
         }
 
         string output = "";
-        string input = _inputText?.text;
+        string input = _inputText.text; // *NEW NOTE* - removed null-conditional operator (?.) as input text is required to run the program
 
         /* ________GET GRID COORDINATES________ */
         string firstLine = input.Substring(0, input.IndexOf('\n')); // get grid size from input by getting substring before first \n
@@ -175,7 +175,7 @@ public class Controller : MonoBehaviour
 
                 if (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y){
                     for (int k = 0; k < grid.Count; k++){
-                        if (grid[k].scentLeft && robot.x == grid[k].x && robot.x == grid[k].y){ // if scent has been left, skip instruction
+                        if (grid[k].scentLeft && robot.x == grid[k].x && robot.y == grid[k].y){ // if scent has been left and , skip instruction
                             robot.MoveBackward();
                             skipInstruction = true;
                             Debug.Log("scent left, skipping instruction: " + instruction);
@@ -207,6 +207,8 @@ public class Controller : MonoBehaviour
         Debug.Log("output: " + output);
         _outputText?.SetText(output);
     }
+
+    // *NEW NOTE* - Start is called on the first 
 
     void Start() => _runButton.onClick.AddListener(() => StartCoroutine(Run())); // left undefended as would rather fail loudly
 }
