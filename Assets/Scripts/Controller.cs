@@ -32,8 +32,10 @@ public class Controller : MonoBehaviour
     [SerializeField] private RectTransform _testAreaRectTransform;
     private int _maxGridSize = 50, _maxInstructionLength = 100, _mapScaleX = 100, _mapScaleY = 100;
 
-    // future work - [SerializeField] private TextMeshProUGUI _maxGridSizeText, _maxInstructionLengthText;
-
+    /* future work 
+    - [SerializeField] private TextMeshProUGUI _maxGridSizeText, _maxInstructionLengthText;
+    - create sanatize input function to remove non-ASCII characters etc, 
+    */
     private List<Point> Grid(int x, int y)
     {
         List<Point> grid = new List<Point>();
@@ -141,7 +143,7 @@ public class Controller : MonoBehaviour
             /*________END CREATE ROBOT OBJECT________ */
             
             /*________GET ROBOT INSTRUCTIONS________ */
-            string instructions = lines[i + 1].ToUpper();
+            string instructions = lines[i + 1].ToUpper(); // 
             instructions = new string(instructions.Where(c => c <= 127).ToArray()); // Remove non-ASCII characters
             instructions = new string(instructions.Where(c => c >= ' ' && c <= '~').ToArray()); // Keep only printable ASCII characters
             instructions = instructions.Replace(" ", ""); // remove whitespaces from the instructions string
