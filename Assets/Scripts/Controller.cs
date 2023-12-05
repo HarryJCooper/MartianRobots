@@ -162,7 +162,7 @@ public class Controller : MonoBehaviour
             /*________RUN ROBOT INSTRUCTIONS________*/
             bool finishEarly = false;
             bool skipInstruction = false;
-            foreach (char instruction in instructions){ // check if robot instructions are valid
+            foreach (char instruction in instructions){
                 yield return new WaitForSeconds(_waitTime); // wait for _waitTime seconds before executing next instruction (for UI purposes)
                 int previousX = robot.x;
                 int previousY = robot.y;
@@ -175,7 +175,11 @@ public class Controller : MonoBehaviour
 
                 if (robot.x < 0 || robot.x > x || robot.y < 0 || robot.y > y){
                     for (int k = 0; k < grid.Count; k++){
-                        if (grid[k].scentLeft && robot.x == grid[k].x && robot.y == grid[k].y){ // if scent has been left and , skip instruction
+                        Debug.Log("grid: " + grid[k].x + " " + grid[k].y + " " + grid[k].scentLeft);
+                        Debug.Log("robot: " + previousX + " " + previousY);
+
+                        if (grid[k].scentLeft && previousX == grid[k].x && previousY == grid[k].y){ 
+                            // if scent has been left and the robot is in the same position as that scent, take back the instruction
                             robot.MoveBackward();
                             skipInstruction = true;
                             Debug.Log("scent left, skipping instruction: " + instruction);
