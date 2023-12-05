@@ -160,7 +160,7 @@ public class Controller : MonoBehaviour
             /*________END GET ROBOT INSTRUCTIONS________*/
             
             /*________RUN ROBOT INSTRUCTIONS________*/
-            // *NEW NOTE* - we let the robot move, then we check for scent, hence 'previousX' and 'previousY'
+            // *NEW NOTE* - we let the robot move to see if it goes out of bounds, then we check for scent, hence 'previousX' and 'previousY'
             bool finishEarly = false, skipInstruction = false;
             foreach (char instruction in instructions){
                 yield return new WaitForSeconds(_waitTime); // wait for _waitTime seconds before executing next instruction (for UI purposes)
@@ -178,9 +178,9 @@ public class Controller : MonoBehaviour
                 if (robotOffGrid){
                     for (int k = 0; k < grid.Count; k++){
                         bool robotAtGridPoint = (grid[k].x == previousX && grid[k].y == previousY);
-                        if (!robotAtGridPoint) continue; // if robot is not at grid[k], continue
+                        if (!robotAtGridPoint) continue; // if was not at grid[k], continue
                         if (grid[k].scentLeft){ 
-                            // if scent has been left and the robot is in the same position as that scent, take back the instruction
+                            // if scent has been left and the robot was in the same position as that scent, take back the instruction
                             robot.MoveBackward();
                             skipInstruction = true;
                             Debug.Log("scent left, skipping instruction: " + instruction);
