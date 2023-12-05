@@ -160,7 +160,7 @@ public class Controller : MonoBehaviour
             /*________END GET ROBOT INSTRUCTIONS________*/
             
             /*________RUN ROBOT INSTRUCTIONS________*/
-            // *NEW NOTE* - we check if the robot has gone out of bounds, before we check for scent, hence 'previousX' and 'previousY'
+            // *NEW NOTE* - we let the robot move, then we check for scent, hence 'previousX' and 'previousY'
             bool finishEarly = false, skipInstruction = false;
             foreach (char instruction in instructions){
                 yield return new WaitForSeconds(_waitTime); // wait for _waitTime seconds before executing next instruction (for UI purposes)
@@ -212,7 +212,7 @@ public class Controller : MonoBehaviour
         _outputText?.SetText(output);
     }
 
-    // *NEW NOTE* - Start is called on the first 
+    // *NEW NOTE* - Start is called on the first frame
 
     void Start() => _runButton.onClick.AddListener(() => StartCoroutine(Run())); // left undefended as would rather fail loudly
 }
